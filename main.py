@@ -37,6 +37,15 @@ class Scraper:
         # Return list of product urls
         return itemsUrls
 
+    def getProductInfo(self, url):
+        '''
+        Todo
+        '''
+
+    def addToDatabase(self):
+        '''
+        Todo
+        '''
 
 jarvis = Scraper('weird stuff', 2)
 print(jarvis.getItemLinksInPage())
