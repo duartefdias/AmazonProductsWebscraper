@@ -20,9 +20,10 @@ class Scraper:
         itemsUrls = []
         ## Make URL of search results
         URL = 'https://www.amazon.com/' + self.searchTerm.replace(' ', '-') + '/s?k=' + self.searchTerm.replace(' ', '+') + '&page=' + str(self.currentPage)
+        print('Search URL:\n' + URL)
         # Get page DOM
         dom = requests.get(URL, headers = self.headers).text
-        soup = BeautifulSoup(dom)
+        soup = BeautifulSoup(dom, 'lxml')
         
         # Get all product's outer div
         productDivs = soup.findAll("div", {"class": "a-section a-spacing-medium"})
@@ -38,9 +39,36 @@ class Scraper:
         return itemsUrls
 
     def getProductInfo(self, url):
-        '''
-        Todo
-        '''
+        # Define product dictionary
+        productInfo = {}
+        
+        # Get page DOM
+        dom = requests.get(url, headers = self.headers).text
+        soup = BeautifulSoup(dom, 'lxml')
+
+        # Get image source
+        productImageDivs = soup.findAll("div", {"class": "imgTagWrapper"})
+        productInfo['imageUrls'] = []
+
+        for productDiv in productImageDivs:
+            imgTag = productDiv.findAll("img")
+            if imgTag:
+                productInfo['imageUrls'].append(imgTag[0].attrs['data-old-hires'])
+
+        # Get product title
+        productTitleSpans = soup.findAll("span", {"id": "productTitle"})
+        productInfo['title'] = productTitleSpans[0].text.strip()
+
+        # Get product price
+        productPriceSpan = soup.find("span", {"id": "priceblock_ourprice"})
+        productInfo['price'] = productPriceSpan.text.replace('$', '')
+        productInfo['price'] = float(productInfo['price'])
+
+        # Get product description
+        productDescriptionDiv = soup.find("div", {"id": "productDescription"})
+        productInfo['description'] = productDescriptionDiv.find("p").text.strip()
+
+        return productInfo
 
     def addToDatabase(self):
         '''
@@ -48,4 +76,7 @@ class Scraper:
         '''
 
 jarvis = Scraper('weird stuff', 2)
-print(jarvis.getItemLinksInPage())
+productResults = jarvis.getItemLinksInPage()
+
+# Get info of a product
+print(jarvis.getProductInfo(productResults[2]))
