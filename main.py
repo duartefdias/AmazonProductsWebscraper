@@ -1,9 +1,6 @@
 import requests
 from bs4 import BeautifulSoup
 
-## regex
-import re
-
 class Scraper:
     def __init__(self, searchTerm, pageNumber):
         self.currentPage = pageNumber
@@ -61,12 +58,15 @@ class Scraper:
 
         # Get product price
         productPriceSpan = soup.find("span", {"id": "priceblock_ourprice"})
+        if productPriceSpan is None:
+            productPriceSpan = soup.find("span", {"id": "priceblock_saleprice"})
         productInfo['price'] = productPriceSpan.text.replace('$', '')
         productInfo['price'] = float(productInfo['price'])
 
         # Get product description
         productDescriptionDiv = soup.find("div", {"id": "productDescription"})
-        productInfo['description'] = productDescriptionDiv.find("p").text.strip()
+        if productDescriptionDiv not None:
+            productInfo['description'] = productDescriptionDiv.find("p").text.strip()
 
         return productInfo
 
@@ -79,4 +79,5 @@ jarvis = Scraper('weird stuff', 2)
 productResults = jarvis.getItemLinksInPage()
 
 # Get info of a product
+print('Url of product:\n', productResults[2])
 print(jarvis.getProductInfo(productResults[2]))
