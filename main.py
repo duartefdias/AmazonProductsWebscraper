@@ -65,7 +65,7 @@ class Scraper:
 
         # Get product description
         productDescriptionDiv = soup.find("div", {"id": "productDescription"})
-        if productDescriptionDiv not None:
+        if productDescriptionDiv is not None:
             productInfo['description'] = productDescriptionDiv.find("p").text.strip()
 
         return productInfo
