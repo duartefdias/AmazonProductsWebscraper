@@ -1,5 +1,8 @@
 import requests
 from bs4 import BeautifulSoup
+import sys
+
+from database import Database
 
 class Scraper:
     def __init__(self, searchTerm, pageNumber):
@@ -11,7 +14,6 @@ class Scraper:
         self.headers = {"User-Agent":"Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:66.0) Gecko/20100101 Firefox/66.0", "Accept-Encoding":"gzip, deflate", "Accept":"text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8", "DNT":"1","Connection":"close", "Upgrade-Insecure-Requests":"1"}
 
 
-    # Working
     # Gets links of all product in the page
     def getItemLinksInPage(self):
         itemsUrls = []
@@ -35,6 +37,7 @@ class Scraper:
         # Return list of product urls
         return itemsUrls
 
+    # Get info of an Amazon product given its url
     def getProductInfo(self, url):
         # Define product dictionary
         productInfo = {}
@@ -54,14 +57,16 @@ class Scraper:
 
         # Get product title
         productTitleSpans = soup.findAll("span", {"id": "productTitle"})
-        productInfo['title'] = productTitleSpans[0].text.strip()
+        if productTitleSpans is not None:
+            productInfo['title'] = productTitleSpans[0].text.strip()
 
         # Get product price
         productPriceSpan = soup.find("span", {"id": "priceblock_ourprice"})
         if productPriceSpan is None:
             productPriceSpan = soup.find("span", {"id": "priceblock_saleprice"})
-        productInfo['price'] = productPriceSpan.text.replace('$', '')
-        productInfo['price'] = float(productInfo['price'])
+        if productPriceSpan is not None:
+            productInfo['price'] = productPriceSpan.text.replace('$', '')
+            productInfo['price'] = float(productInfo['price'])
 
         # Get product description
         productDescriptionDiv = soup.find("div", {"id": "productDescription"})
@@ -70,14 +75,35 @@ class Scraper:
 
         return productInfo
 
-    def addToDatabase(self):
-        '''
-        Todo
-        '''
+def main():
+    searchTerm = sys.argv[1] #'weird stuff'
+    numberOfProductsToAdd = int(sys.argv[2]) # 10
+    db = Database()
 
-jarvis = Scraper('weird stuff', 2)
-productResults = jarvis.getItemLinksInPage()
+    remainingProductsInPage = 0
+    currentPageItem = 0
 
-# Get info of a product
-print('Url of product:\n', productResults[2])
-print(jarvis.getProductInfo(productResults[2]))
+    # Initialize Scraper object
+    jarvis = Scraper(searchTerm, 1)
+
+    # Iterate through number of product to add
+    while numberOfProductsToAdd > 0:
+        # Check if there are still items in the page that weren't added to the db
+        if remainingProductsInPage == 0:
+            jarvis.currentPage = jarvis.currentPage + 1
+            searchPageItemsUrls = jarvis.getItemLinksInPage()
+
+        # Get info on a single product
+        print('Current page product page URL:\n', searchPageItemsUrls[currentPageItem])
+        itemInfo = jarvis.getProductInfo(searchPageItemsUrls[currentPageItem])
+        print(itemInfo)
+        print('\n')
+        currentPageItem = currentPageItem + 1
+        remainingProductsInPage = remainingProductsInPage - 1
+        numberOfProductsToAdd = numberOfProductsToAdd - 1
+
+        # Add product to database
+        db.insertProduct(itemInfo)
+
+if __name__ == "__main__":
+    main()
