@@ -41,6 +41,7 @@ class Scraper:
     def getProductInfo(self, url):
         # Define product dictionary
         productInfo = {}
+        productInfo['affiliateLink'] = url
         
         # Get page DOM
         dom = requests.get(url, headers = self.headers).text
@@ -54,6 +55,9 @@ class Scraper:
             imgTag = productDiv.findAll("img")
             if imgTag:
                 productInfo['imageUrls'].append(imgTag[0].attrs['data-old-hires'])
+
+        if(productInfo['imageUrls']):
+            productInfo['imageURL'] = productInfo['imageUrls'][0]
 
         # Get product title
         productTitleSpans = soup.findAll("span", {"id": "productTitle"})

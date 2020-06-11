@@ -14,5 +14,3 @@ class Database:
         self.curatorCollection.insert_one(product)
         return 'Inserted product into db'
 
-db = Database()
-db.insertProduct({"test": "value of test product"})
