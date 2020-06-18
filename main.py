@@ -60,11 +60,14 @@ class Scraper:
             productInfo['imageURL'] = productInfo['imageUrls'][0]
 
         # Get product title
+        productInfo['title'] = ''
         productTitleSpans = soup.findAll("span", {"id": "productTitle"})
         if productTitleSpans is not None:
-            productInfo['title'] = productTitleSpans[0].text.strip()
+            if productTitleSpans:
+                productInfo['title'] = productTitleSpans[0].text.strip()
 
         # Get product price
+        productInfo['price'] = ''
         productPriceSpan = soup.find("span", {"id": "priceblock_ourprice"})
         if productPriceSpan is None:
             productPriceSpan = soup.find("span", {"id": "priceblock_saleprice"})
@@ -73,11 +76,21 @@ class Scraper:
             productInfo['price'] = float(productInfo['price'])
 
         # Get product description
+        productInfo['description'] = ''
         productDescriptionDiv = soup.find("div", {"id": "productDescription"})
         if productDescriptionDiv is not None:
             productInfo['description'] = productDescriptionDiv.find("p").text.strip()
 
         return productInfo
+
+def printItemInfo(item):
+    print("Images in item: ", len(item['imageUrls']))
+    print("Title: ", item['title'])
+    print("Price: ", item['price'])
+    if item['description']:
+        print("Description: Yes\n")
+    else:
+        print("Description: No\n")
 
 def main():
     searchTerm = sys.argv[1] #'weird stuff'
@@ -100,8 +113,7 @@ def main():
         # Get info on a single product
         print('Current page product page URL:\n', searchPageItemsUrls[currentPageItem])
         itemInfo = jarvis.getProductInfo(searchPageItemsUrls[currentPageItem])
-        print(itemInfo)
-        print('\n')
+        printItemInfo(itemInfo)
         currentPageItem = currentPageItem + 1
         remainingProductsInPage = remainingProductsInPage - 1
         numberOfProductsToAdd = numberOfProductsToAdd - 1
