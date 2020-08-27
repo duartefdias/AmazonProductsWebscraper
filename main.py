@@ -19,7 +19,7 @@ class Scraper:
         itemsUrls = []
         ## Make URL of search results
         URL = 'https://www.amazon.com/' + self.searchTerm.replace(' ', '-') + '/s?k=' + self.searchTerm.replace(' ', '+') + '&page=' + str(self.currentPage)
-        print('Search URL:\n' + URL)
+        print('\nSearch URL:\n' + URL + '\n')
         # Get page DOM
         dom = requests.get(URL, headers = self.headers).text
         soup = BeautifulSoup(dom, 'lxml')
@@ -72,7 +72,11 @@ class Scraper:
         if productPriceSpan is None:
             productPriceSpan = soup.find("span", {"id": "priceblock_saleprice"})
         if productPriceSpan is not None:
+            # Remove currency sign
             productInfo['price'] = productPriceSpan.text.replace('$', '')
+            # Remove additional clutter (example: '48.99 - 125.00')
+            productInfo['price'] = productInfo['price'].split(' ')[0]
+            # Convert string into float
             productInfo['price'] = float(productInfo['price'])
 
         # Get product description
@@ -92,16 +96,20 @@ def printItemInfo(item):
     else:
         print("Description: No\n")
 
+# Example execution: python .\main.py 'weird products' 30 1
+# 30 -> Number of product to add
+# 1 -> Starting result page
 def main():
     searchTerm = sys.argv[1] #'weird stuff'
     numberOfProductsToAdd = int(sys.argv[2]) # 10
+    startingResultsPage = int(sys.argv[3]) # Use 1 by default
     db = Database()
 
     remainingProductsInPage = 0
     currentPageItem = 0
 
     # Initialize Scraper object
-    jarvis = Scraper(searchTerm, 1)
+    jarvis = Scraper(searchTerm, startingResultsPage)
 
     # Iterate through number of product to add
     while numberOfProductsToAdd > 0:
@@ -111,7 +119,9 @@ def main():
             searchPageItemsUrls = jarvis.getItemLinksInPage()
 
         # Get info on a single product
-        print('Current page product page URL:\n', searchPageItemsUrls[currentPageItem])
+        if(len(searchPageItemsUrls) == 0):
+            return print('Amazon showing robot verification or invalid page, try again in a few minutes')
+        print(searchPageItemsUrls[currentPageItem])
         itemInfo = jarvis.getProductInfo(searchPageItemsUrls[currentPageItem])
         printItemInfo(itemInfo)
         currentPageItem = currentPageItem + 1
